@@ -3,9 +3,9 @@
  *
  * Paul Mackerras	August 1996.
  * Copyright (C) 1996-2005 Paul Mackerras.
- * 
+ *
  *  Adapted for 64bit PowerPC by Dave Engebretsen and Peter Bergner.
- *    {engebret|bergner}@us.ibm.com 
+ *    {engebret|bergner}@us.ibm.com
  *
  *      This program is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU General Public License
@@ -533,7 +533,7 @@ static int __init early_init_dt_scan_memory_ppc(unsigned long node,
 		return 0;
 	}
 #endif
-	
+
 	return early_init_dt_scan_memory(node, uname, depth, data);
 }
 
@@ -630,7 +630,7 @@ static void __init early_reserve_mem(void)
 #endif /* CONFIG_BLK_DEV_INITRD */
 
 #ifdef CONFIG_PPC32
-	/* 
+	/*
 	 * Handle the case where we might be booting from an old kexec
 	 * image that setup the mem_rsvmap as pairs of 32-bit values
 	 */
@@ -737,6 +737,13 @@ void __init early_init_devtree(void *params)
 	of_scan_flat_dt(early_init_dt_scan_root, NULL);
 	of_scan_flat_dt(early_init_dt_scan_memory_ppc, NULL);
 
+	/*
+	 * As generic code authors expect to be able to use static keys
+	 * in early_param() handlers, we initialize the static keys just
+	 * before parsing early params (it's fine to call jump_label_init()
+	 * more than once).
+	 */
+	jump_label_init();
 	parse_early_param();
 
 	/* make sure we've parsed cmdline for mem= before this */

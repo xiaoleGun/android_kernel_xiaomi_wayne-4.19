@@ -318,7 +318,7 @@ static void nfs4_setup_readdir(u64 cookie, __be32 *verifier, struct dentry *dent
 	memset(&readdir->verifier, 0, sizeof(readdir->verifier));
 	if (cookie == 2)
 		return;
-	
+
 	/*
 	 * NFSv4 servers do not return entries for '.' and '..'
 	 * Therefore, we fake these entries here.  We let '.'
@@ -327,7 +327,7 @@ static void nfs4_setup_readdir(u64 cookie, __be32 *verifier, struct dentry *dent
 	 * instead of 1 or 2.
 	 */
 	start = p = kmap_atomic(*readdir->pages);
-	
+
 	if (cookie == 0) {
 		*p++ = xdr_one;                                  /* next */
 		*p++ = xdr_zero;                   /* cookie, first word */
@@ -341,7 +341,7 @@ static void nfs4_setup_readdir(u64 cookie, __be32 *verifier, struct dentry *dent
 		*p++ = htonl(NF4DIR);
 		p = xdr_encode_hyper(p, NFS_FILEID(d_inode(dentry)));
 	}
-	
+
 	*p++ = xdr_one;                                  /* next */
 	*p++ = xdr_zero;                   /* cookie, first word */
 	*p++ = xdr_two;                   /* cookie, second word */
@@ -1997,7 +1997,7 @@ static int nfs4_open_recover_helper(struct nfs4_opendata *opendata,
 	nfs4_init_opendata_res(opendata);
 	ret = _nfs4_recover_proc_open(opendata);
 	if (ret != 0)
-		return ret; 
+		return ret;
 	newstate = nfs4_opendata_to_nfs4_state(opendata);
 	if (IS_ERR(newstate))
 		return PTR_ERR(newstate);
@@ -2920,12 +2920,13 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
 	}
 
 out:
-	if (opendata->lgp) {
-		nfs4_lgopen_release(opendata->lgp);
-		opendata->lgp = NULL;
-	}
-	if (!opendata->cancelled)
+	if (!opendata->cancelled) {
+		if (opendata->lgp) {
+			nfs4_lgopen_release(opendata->lgp);
+			opendata->lgp = NULL;
+		}
 		nfs4_sequence_free_slot(&opendata->o_res.seq_res);
+	}
 	return ret;
 }
 
@@ -3460,13 +3461,13 @@ static const struct rpc_call_ops nfs4_close_ops = {
 	.rpc_release = nfs4_free_closedata,
 };
 
-/* 
- * It is possible for data to be read/written from a mem-mapped file 
+/*
+ * It is possible for data to be read/written from a mem-mapped file
  * after the sys_close call (which hits the vfs layer as a flush).
- * This means that we can't safely call nfsv4 close on a file until 
+ * This means that we can't safely call nfsv4 close on a file until
  * the inode is cleared. This in turn means that we are not good
- * NFSv4 citizens - we do not indicate to the server to update the file's 
- * share state even when we are done with one of the three share 
+ * NFSv4 citizens - we do not indicate to the server to update the file's
+ * share state even when we are done with one of the three share
  * stateid's in the inode.
  *
  * NOTE: Caller must be holding the sp->so_owner semaphore!
@@ -3951,7 +3952,7 @@ static int nfs4_proc_getattr(struct nfs_server *server, struct nfs_fh *fhandle,
 	return err;
 }
 
-/* 
+/*
  * The file is not closed if it is opened due to the a request to change
  * the size of the file. The open call will not be needed once the
  * VFS layer lookup-intents are implemented.
@@ -3984,7 +3985,7 @@ nfs4_proc_setattr(struct dentry *dentry, struct nfs_fattr *fattr,
 		pnfs_commit_and_return_layout(inode);
 
 	nfs_fattr_init(fattr);
-	
+
 	/* Deal with open(O_TRUNC) */
 	if (sattr->ia_valid & ATTR_OPEN)
 		sattr->ia_valid &= ~(ATTR_MTIME|ATTR_CTIME);
@@ -4622,7 +4623,7 @@ static int _nfs4_proc_symlink(struct inode *dir, struct dentry *dentry,
 	data->arg.u.symlink.pages = &page;
 	data->arg.u.symlink.len = len;
 	data->arg.label = label;
-	
+
 	status = nfs4_do_create(dir, dentry, data);
 
 	nfs4_free_createdata(data);
@@ -8701,6 +8702,9 @@ static int nfs41_reclaim_complete_handle_errors(struct rpc_task *task, struct nf
 		rpc_delay(task, NFS4_POLL_RETRY_MAX);
 		/* fall through */
 	case -NFS4ERR_RETRY_UNCACHED_REP:
+	case -EACCES:
+		dprintk("%s: failed to reclaim complete error %d for server %s, retrying\n",
+			__func__, task->tk_status, clp->cl_hostname);
 		return -EAGAIN;
 	case -NFS4ERR_BADSESSION:
 	case -NFS4ERR_DEADSESSION:

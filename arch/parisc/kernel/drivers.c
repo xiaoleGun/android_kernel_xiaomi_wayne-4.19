@@ -9,9 +9,9 @@
  * Copyright (c) 1999 The Puffin Group
  * Copyright (c) 2001 Matthew Wilcox for Hewlett Packard
  * Copyright (c) 2001 Helge Deller <deller@gmx.de>
- * Copyright (c) 2001,2002 Ryan Bradetich 
+ * Copyright (c) 2001,2002 Ryan Bradetich
  * Copyright (c) 2004-2005 Thibaut VARENE <varenet@parisc-linux.org>
- * 
+ *
  * The file handles registering devices and drivers, then matching them.
  * It's the closest we get to a dating agency.
  *
@@ -144,7 +144,7 @@ static int __exit parisc_driver_remove(struct device *dev)
 
 	return 0;
 }
-	
+
 
 /**
  * register_parisc_driver - Register this driver if it can handle a device
@@ -499,7 +499,6 @@ alloc_pa_dev(unsigned long hpa, struct hardware_path *mod_path)
 	dev->id.hversion_rev = iodc_data[1] & 0x0f;
 	dev->id.sversion = ((iodc_data[4] & 0x0f) << 16) |
 			(iodc_data[5] << 8) | iodc_data[6];
-	dev->hpa.name = parisc_pathname(dev);
 	dev->hpa.start = hpa;
 	/* This is awkward.  The STI spec says that gfx devices may occupy
 	 * 32MB or 64MB.  Unfortunately, we don't know how to tell whether
@@ -513,10 +512,10 @@ alloc_pa_dev(unsigned long hpa, struct hardware_path *mod_path)
 		dev->hpa.end = hpa + 0xfff;
 	}
 	dev->hpa.flags = IORESOURCE_MEM;
-	name = parisc_hardware_description(&dev->id);
-	if (name) {
-		strlcpy(dev->name, name, sizeof(dev->name));
-	}
+	dev->hpa.name = dev->name;
+	name = parisc_hardware_description(&dev->id) ? : "unknown";
+	snprintf(dev->name, sizeof(dev->name), "%s [%s]",
+		name, parisc_pathname(dev));
 
 	/* Silently fail things like mouse ports which are subsumed within
 	 * the keyboard controller
@@ -812,7 +811,7 @@ static void __init walk_lower_bus(struct parisc_device *dev)
  * @io_io_low: Base address of this bus.
  * @io_io_high: Last address of this bus.
  * @parent: The parent bus device.
- * 
+ *
  * A native bus (eg Runway or GSC) may have up to 64 devices on it,
  * spaced at intervals of 0x1000 bytes.  PDC may not inform us of these
  * devices, so we have to probe for them.  Unfortunately, we may find
