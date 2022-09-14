@@ -432,7 +432,7 @@ static inline vm_fault_t do_exception(struct pt_regs *regs, int access)
 
 	/*
 	 * Verify that the fault happened in user space, that
-	 * we are not in an interrupt and that there is a 
+	 * we are not in an interrupt and that there is a
 	 * user context.
 	 */
 	fault = VM_FAULT_BADCONTEXT;
@@ -455,7 +455,9 @@ static inline vm_fault_t do_exception(struct pt_regs *regs, int access)
 	flags = FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE;
 	if (user_mode(regs))
 		flags |= FAULT_FLAG_USER;
-	if (access == VM_WRITE || (trans_exc_code & store_indication) == 0x400)
+	if ((trans_exc_code & store_indication) == 0x400)
+		access = VM_WRITE;
+	if (access == VM_WRITE)
 		flags |= FAULT_FLAG_WRITE;
 	down_read(&mm->mmap_sem);
 
@@ -614,7 +616,7 @@ void do_dat_exception(struct pt_regs *regs)
 }
 NOKPROBE_SYMBOL(do_dat_exception);
 
-#ifdef CONFIG_PFAULT 
+#ifdef CONFIG_PFAULT
 /*
  * 'pfault' pseudo page faults routines.
  */
